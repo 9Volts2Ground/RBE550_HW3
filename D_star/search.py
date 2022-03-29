@@ -43,16 +43,16 @@ class DStar:
     def instantiate_node(self, point):
         ''' Instatiate a node given point (x, y) '''
         row, col = point
-        node = Node(row, col, not self.grid[row][col], 
+        node = Node(row, col, not self.grid[row][col],
                               not self.dynamic_grid[row][col])
         return node
 
 
     def get_k_min(self):
         '''Get the minimal k value from open list
-        
+
         return:
-        k - the minimal k value in the open list; 
+        k - the minimal k value in the open list;
             return -1 if the open list is empty
         '''
         # Find the node with minimal k value
@@ -63,13 +63,13 @@ class DStar:
         # Get the minimal k value
         else:
             return node.k
-    
+
 
     def min_node(self):
         '''Get the node with minimal k value from open list
-        
+
         return:
-        node - the node with minimal k value in the open list; 
+        node - the node with minimal k value in the open list;
                return None if the open list is empty
         '''
         # If open is empty
@@ -81,13 +81,13 @@ class DStar:
 
 
     def delete(self, node):
-        ''' Remove a node from open list 
+        ''' Remove a node from open list
             and set it to "CLOSED"
         '''
         self.open.remove(node)
         node.tag = "CLOSED"
 
-    
+
     def get_neighbors(self, node):
         ''' Get neighbors of a node with 8 connectivity '''
         row = node.row
@@ -105,12 +105,12 @@ class DStar:
                     continue
 
                 neighbors.append(self.grid_node[row + i][col + j])
-        
+
         return neighbors
 
 
     def cost(self, node1, node2):
-        ''' Euclidean distance from one node to another 
+        ''' Euclidean distance from one node to another
 
             return:
             distance - Euclidean distance from node 1 to node 2
@@ -126,7 +126,7 @@ class DStar:
 
 
     def process_state(self):
-        ''' Pop the node in the open list 
+        ''' Pop the node in the open list
             Process the node based on its state (RAISE or LOWER)
             If RAISE
                 Try to decrease the h value by finding better parent from neighbors
@@ -137,10 +137,10 @@ class DStar:
         '''
         #### TODO ####
         # Pop node from open list
-        
+
         # Get neighbors of the node
         # using self.get_neighbors
-        
+
         # If node k is smaller than h (RAISE)
 
         # If node k is the same as h (LOWER)
@@ -153,26 +153,26 @@ class DStar:
 
 
     def repair_replan(self, node):
-        ''' Replan the trajectory until 
-            no better path is possible or the open list is empty 
+        ''' Replan the trajectory until
+            no better path is possible or the open list is empty
         '''
         #### TODO ####
         # Call self.process_state() until it returns k_min >= h(Y) or open list is empty
         # The cost change will be propagated
 
         #### TODO END ####
-        
+
 
     def modify_cost(self, obsatcle_node, neighbor):
-        ''' Modify the cost from the affected node to the obstacle node and 
+        ''' Modify the cost from the affected node to the obstacle node and
             put it back to the open list
-        ''' 
+        '''
         #### TODO ####
         # Change the cost from the dynamic obsatcle node to the affected node
         # by setting the obstacle_node.is_obs to True (see self.cost())
-        
-        # Put the obsatcle node and the neighbor node back to Open list 
-        
+
+        # Put the obsatcle node and the neighbor node back to Open list
+
         #### TODO END ####
 
         return self.get_k_min()
@@ -185,10 +185,10 @@ class DStar:
         '''
         #### TODO ####
         # Sense the neighbors to see if they are new obstacles
-        
-            # If neighbor.is_dy_obs == True but neighbor.is_obs == Flase, 
+
+            # If neighbor.is_dy_obs == True but neighbor.is_obs == Flase,
             # the neighbor is a new dynamic obstacle
-            
+
                 # Modify the cost from this neighbor node to all this neighbor's neighbors
                 # using self.modify_cost
 
@@ -222,16 +222,16 @@ class DStar:
     def run(self):
         ''' Run D* algorithm
             Perform the first search from goal to start given the pre-known grid
-            Check from start to goal to see if any change happens in the grid, 
+            Check from start to goal to see if any change happens in the grid,
             modify the cost and replan in the new map
         '''
         #### TODO ####
         # Search from goal to start with the pre-known map
-        
+
             # Process until open set is empty or start is reached
             # using self.process_state()
-            
-        
+
+
         # Visualize the first path if found
         self.get_backpointer_list(self.start)
         self.draw_path(self.grid, "Path in static map")
@@ -249,7 +249,7 @@ class DStar:
             # using self.repair_replan
 
             # Get the new path from the current node
-            
+
             # Uncomment this part when you have finished the previous part
             # for visualizing each move and replanning
             '''
@@ -263,7 +263,7 @@ class DStar:
             # Get the next node to continue
 
         #### TODO END ####
-                
+
 
     def get_backpointer_list(self, node):
         ''' Keep tracing back to get the path from a given node to goal '''
@@ -295,9 +295,9 @@ class DStar:
             for j in range(col):
                 if not self.grid_node[i][j].is_obs: \
                     ax.add_patch(Rectangle((j-0.5, i-0.5),1,1,edgecolor='k',facecolor='w'))  # free space
-                else:    
-                    ax.add_patch(Rectangle((j-0.5, i-0.5),1,1,edgecolor='k',facecolor='k'))  # obstacle      
-                    
+                else:
+                    ax.add_patch(Rectangle((j-0.5, i-0.5),1,1,edgecolor='k',facecolor='k'))  # obstacle
+
         # Draw path
         for node in self.path:
             row, col = node.row, node.col

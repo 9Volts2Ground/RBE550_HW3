@@ -27,7 +27,7 @@ class RRT:
         self.goal = Node(goal[0], goal[1])    # goal node
         self.vertices = []                    # list of nodes
         self.found = False                    # found flag
-        
+
 
     def init_map(self):
         '''Intialize the map before each search
@@ -36,7 +36,7 @@ class RRT:
         self.vertices = []
         self.vertices.append(self.start)
 
-    
+
     def dis(self, node1, node2):
         '''Calculate the euclidean distance between two nodes
         arguments:
@@ -48,7 +48,7 @@ class RRT:
         '''
         return np.sqrt((node1.row-node2.row)**2 + (node1.col-node2.col)**2)
 
-    
+
     def check_collision(self, node1, node2):
         '''Check if the path between two nodes collide with obstacles
         arguments:
@@ -61,7 +61,7 @@ class RRT:
         '''
         # Check obstacle between nodes
         # get all the points in between
-        points_between = zip(np.linspace(node1.row, node2.row, dtype=int), 
+        points_between = zip(np.linspace(node1.row, node2.row, dtype=int),
                              np.linspace(node1.col, node2.col, dtype=int))
         # check if any of these are obstacles
         for point in points_between:
@@ -86,7 +86,7 @@ class RRT:
             point = [np.random.randint(0, self.size_col-1), np.random.randint(0, self.size_row-1)]
         return point
 
-    
+
     def get_new_point_in_ellipsoid(self, goal_bias, c_best):
         '''Choose the goal or generate a random point in an ellipsoid
            defined by start, goal and current best length of path
@@ -100,7 +100,7 @@ class RRT:
         # Select goal
         if np.random.random() < goal_bias:
             point = [self.goal.col, self.goal.row]
-        
+
         #### TODO ####
         # Generate a random point in an ellipsoid
         else:
@@ -114,14 +114,14 @@ class RRT:
             # Compute diagonal matrix - L
 
             # Cast a sample from a unit ball - x_ball
-            
+
             # Map ball sample to the ellipsoid - x_rand
 
         #### TODO END ####
 
         return point
 
-    
+
     def get_nearest_node(self, point):
         '''Find the nearest node from the new point in self.vertices
         arguments:
@@ -136,7 +136,7 @@ class RRT:
         coord, ind = kdtree.query(point)
         return self.vertices[ind]
 
-    
+
     def sample(self, goal_bias=0.05, c_best=0):
         '''Sample a random point in the area
         arguments:
@@ -156,10 +156,10 @@ class RRT:
 
         # Regular sampling if c_best <= 0
         # using self.get_new_point
-        
+
         # Sampling in an ellipsoid if c_best is a positive value
         # using self.get_new_point_in_ellipsoid
-        
+
         #### TODO END ####
 
         return new_point
@@ -215,7 +215,7 @@ class RRT:
             neighbor_size - the neighbor distance
 
         return:
-            neighbors - a list of neighbors that are within the neighbor distance 
+            neighbors - a list of neighbors that are within the neighbor distance
         '''
         # Use kdtree to find the neighbors within neighbor size
         samples = [[v.row, v.col] for v in self.vertices]
@@ -239,7 +239,7 @@ class RRT:
         cost = 0
         curr_node = end_node
         while start_node.row != curr_node.row or start_node.col != curr_node.col:
-            # Keep tracing back until finding the start_node 
+            # Keep tracing back until finding the start_node
             # or no path exists
             parent = curr_node.parent
             if parent is None:
@@ -247,7 +247,7 @@ class RRT:
                 return 0
             cost += curr_node.cost
             curr_node = parent
-        
+
         return cost
 
 
@@ -289,7 +289,7 @@ class RRT:
                 node.parent = new_node
                 node.cost = distances[i]
 
-    
+
     def draw_map(self):
         '''Visualization of the result
         '''
@@ -302,7 +302,7 @@ class RRT:
         for node in self.vertices[1:-1]:
             plt.plot(node.col, node.row, markersize=3, marker='o', color='y')
             plt.plot([node.col, node.parent.col], [node.row, node.parent.row], color='y')
-        
+
         # Draw Final Path if found
         if self.found:
             cur = self.goal
@@ -322,14 +322,14 @@ class RRT:
     def RRT(self, n_pts=1000):
         '''RRT main search function
         arguments:
-            n_pts - number of points try to sample, 
+            n_pts - number of points try to sample,
                     not the number of final sampled points
 
         In each step, extend a new node if possible, and check if reached the goal
         '''
         # Remove previous result
         self.init_map()
-        # Start searching       
+        # Start searching
         for i in range(n_pts):
             # Extend a new node until all the points are sampled
             # or find the path
@@ -346,7 +346,7 @@ class RRT:
             print("The path length is %.2f" %length)
         if not self.found:
             print("No path found")
-        
+
         # Draw result
         self.draw_map()
 
@@ -354,15 +354,15 @@ class RRT:
     def RRT_star(self, n_pts=1000, neighbor_size=20):
         '''RRT* search function
         arguments:
-            n_pts - number of points try to sample, 
+            n_pts - number of points try to sample,
                     not the number of final sampled points
             neighbor_size - the neighbor distance
-        
+
         In each step, extend a new node if possible, and rewire the node and its neighbors
         '''
         # Remove previous result
         self.init_map()
-        # Start searching       
+        # Start searching
         for i in range(n_pts):
             # Extend a new node
             new_point = self.sample(0.05, 0)
@@ -388,16 +388,16 @@ class RRT:
     def informed_RRT_star(self, n_pts=1000, neighbor_size=20):
         '''Informed RRT* search function
         arguments:
-            n_pts - number of points try to sample, 
+            n_pts - number of points try to sample,
                     not the number of final sampled points
             neighbor_size - the neighbor distance
-        
+
         In each step, extend a new node if possible, and rewire the node and its neighbors
         Once a path is found, an ellipsoid will be defined to constrained the sampling area
         '''
         # Remove previous result
         self.init_map()
-        # Start searching       
+        # Start searching
         for i in range(n_pts):
 
             #### TODO ####
