@@ -80,10 +80,10 @@ class RRT:
         '''
         # select goal
         if np.random.random() < goal_bias:
-            point = [self.goal.col, self.goal.row]
+            point = [self.goal.row, self.goal.col]
         # or generate a random point
         else:
-            point = [np.random.randint(0, self.size_col-1), np.random.randint(0, self.size_row-1)]
+            point = [np.random.randint(0, self.size_row-1), np.random.randint(0, self.size_col-1)]
         return point
 
 
@@ -99,7 +99,7 @@ class RRT:
         '''
         # Select goal
         if np.random.random() < goal_bias:
-            point = [self.goal.col, self.goal.row]
+            point = [self.goal.row, self.goal.col]
 
         #### TODO ####
         # Generate a random point in an ellipsoid
