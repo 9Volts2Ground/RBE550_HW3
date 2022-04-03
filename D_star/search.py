@@ -2,8 +2,11 @@ import matplotlib.pyplot as plt
 from matplotlib.patches import Rectangle
 import math
 
-# Class for each node in the grid
+#==============================================================================
 class Node:
+    '''
+    Class for each node in the grid
+    '''
     def __init__(self, row, col, is_obs, is_dy_obs):
         self.row = row             # coordinate
         self.col = col             # coordinate
@@ -14,7 +17,7 @@ class Node:
         self.k = math.inf          # best h
         self.parent = None         # parent node
 
-
+#==============================================================================
 class DStar:
     def __init__(self, grid, dynamic_grid, start, goal):
         # Maps
@@ -39,7 +42,7 @@ class DStar:
         # Result
         self.path = []
 
-
+    #==========================================================================
     def instantiate_node(self, point):
         ''' Instatiate a node given point (x, y) '''
         row, col = point
@@ -47,7 +50,7 @@ class DStar:
                               not self.dynamic_grid[row][col])
         return node
 
-
+    #==========================================================================
     def get_k_min(self):
         '''Get the minimal k value from open list
 
@@ -64,7 +67,7 @@ class DStar:
         else:
             return node.k
 
-
+    #==========================================================================
     def min_node(self):
         '''Get the node with minimal k value from open list
 
@@ -79,7 +82,7 @@ class DStar:
         else:
             return min(self.open, key=lambda n: n.k)
 
-
+    #==========================================================================
     def delete(self, node):
         ''' Remove a node from open list
             and set it to "CLOSED"
@@ -87,7 +90,7 @@ class DStar:
         self.open.remove(node)
         node.tag = "CLOSED"
 
-
+    #==========================================================================
     def get_neighbors(self, node):
         ''' Get neighbors of a node with 8 connectivity '''
         row = node.row
@@ -108,7 +111,7 @@ class DStar:
 
         return neighbors
 
-
+    #==========================================================================
     def cost(self, node1, node2):
         ''' Euclidean distance from one node to another
 
@@ -124,7 +127,7 @@ class DStar:
         b = node1.col - node2.col
         return (a**2 + b**2) ** (1/2)
 
-
+    #==========================================================================
     def process_state(self):
         ''' Pop the node in the open list
             Process the node based on its state (RAISE or LOWER)
@@ -151,7 +154,7 @@ class DStar:
 
         return self.get_k_min()
 
-
+    #==========================================================================
     def repair_replan(self, node):
         ''' Replan the trajectory until
             no better path is possible or the open list is empty
@@ -162,7 +165,7 @@ class DStar:
 
         #### TODO END ####
 
-
+    #==========================================================================
     def modify_cost(self, obsatcle_node, neighbor):
         ''' Modify the cost from the affected node to the obstacle node and
             put it back to the open list
@@ -177,7 +180,7 @@ class DStar:
 
         return self.get_k_min()
 
-
+    #==========================================================================
     def prepare_repair(self, node):
         ''' Sense the neighbors of the given node
             If any of the neighbor node is a dynamic obstacle
@@ -194,7 +197,7 @@ class DStar:
 
         #### TODO END ####
 
-
+    #==========================================================================
     def insert(self, node, new_h):
         ''' Insert node in the open list
 
@@ -218,7 +221,7 @@ class DStar:
         node.tag = "OPEN"
         self.open.add(node)
 
-
+    #==========================================================================
     def run(self):
         ''' Run D* algorithm
             Perform the first search from goal to start given the pre-known grid
@@ -264,7 +267,7 @@ class DStar:
 
         #### TODO END ####
 
-
+    #==========================================================================
     def get_backpointer_list(self, node):
         ''' Keep tracing back to get the path from a given node to goal '''
         # Assume there is a path from start to goal
@@ -282,7 +285,7 @@ class DStar:
         if cur_node != self.goal:
             self.path = []
 
-
+    #==========================================================================
     def draw_path(self, grid, title="Path"):
         '''Visualization of the found path using matplotlib'''
         fig, ax = plt.subplots(1)

@@ -5,16 +5,18 @@ import matplotlib.pyplot as plt
 import numpy as np
 from scipy import spatial
 
-
-# Class for each tree node
+#==============================================================================
 class Node:
+    '''
+    Class for each tree node
+    '''
     def __init__(self, row, col):
         self.row = row        # coordinate
         self.col = col        # coordinate
         self.parent = None    # parent node / edge
         self.cost = 0.0       # cost to parent / edge weight
 
-
+#==============================================================================
 # Class for RRT
 class RRT:
     # Constructor
@@ -28,7 +30,7 @@ class RRT:
         self.vertices = []                    # list of nodes
         self.found = False                    # found flag
 
-
+    #==========================================================================
     def init_map(self):
         '''Intialize the map before each search
         '''
@@ -36,7 +38,7 @@ class RRT:
         self.vertices = []
         self.vertices.append(self.start)
 
-
+    #==========================================================================
     def dis(self, node1, node2):
         '''Calculate the euclidean distance between two nodes
         arguments:
@@ -48,7 +50,7 @@ class RRT:
         '''
         return np.sqrt((node1.row-node2.row)**2 + (node1.col-node2.col)**2)
 
-
+    #==========================================================================
     def check_collision(self, node1, node2):
         '''Check if the path between two nodes collide with obstacles
         arguments:
@@ -69,7 +71,7 @@ class RRT:
                 return True
         return False
 
-
+    #==========================================================================
     def get_new_point(self, goal_bias):
         '''Choose the goal or generate a random point
         arguments:
@@ -86,7 +88,7 @@ class RRT:
             point = [np.random.randint(0, self.size_row-1), np.random.randint(0, self.size_col-1)]
         return point
 
-
+    #==========================================================================
     def get_new_point_in_ellipsoid(self, goal_bias, c_best):
         '''Choose the goal or generate a random point in an ellipsoid
            defined by start, goal and current best length of path
@@ -121,7 +123,7 @@ class RRT:
 
         return point
 
-
+    #==========================================================================
     def get_nearest_node(self, point):
         '''Find the nearest node from the new point in self.vertices
         arguments:
@@ -136,7 +138,7 @@ class RRT:
         coord, ind = kdtree.query(point)
         return self.vertices[ind]
 
-
+    #==========================================================================
     def sample(self, goal_bias=0.05, c_best=0):
         '''Sample a random point in the area
         arguments:
@@ -164,7 +166,7 @@ class RRT:
 
         return new_point
 
-
+    #==========================================================================
     def extend(self, new_point, extend_dis=10):
         '''Extend a new node to the current tree structure
         arguments:
@@ -207,7 +209,7 @@ class RRT:
         else:
             return None
 
-
+    #==========================================================================
     def get_neighbors(self, new_node, neighbor_size):
         '''Get the neighbors that is within the neighbor distance from the node
         arguments:
@@ -226,7 +228,7 @@ class RRT:
         neighbors.remove(new_node)
         return neighbors
 
-
+    #==========================================================================
     def path_cost(self, start_node, end_node):
         '''Compute path cost starting from start node to end node
         arguments:
@@ -250,7 +252,7 @@ class RRT:
 
         return cost
 
-
+    #==========================================================================
     def rewire(self, new_node, neighbors):
         '''Rewire the new node and all its neighbors
         arguments:
@@ -289,7 +291,7 @@ class RRT:
                 node.parent = new_node
                 node.cost = distances[i]
 
-
+    #==========================================================================
     def draw_map(self):
         '''Visualization of the result
         '''
@@ -318,7 +320,7 @@ class RRT:
         # show image
         plt.show()
 
-
+    #==========================================================================
     def RRT(self, n_pts=1000):
         '''RRT main search function
         arguments:
@@ -350,7 +352,7 @@ class RRT:
         # Draw result
         self.draw_map()
 
-
+    #==========================================================================
     def RRT_star(self, n_pts=1000, neighbor_size=20):
         '''RRT* search function
         arguments:
@@ -384,7 +386,7 @@ class RRT:
         # Draw result
         self.draw_map()
 
-
+    #==========================================================================
     def informed_RRT_star(self, n_pts=1000, neighbor_size=20):
         '''Informed RRT* search function
         arguments:
