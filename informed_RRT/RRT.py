@@ -31,6 +31,115 @@ class RRT:
         self.found = False                    # found flag
 
     #==========================================================================
+    def RRT(self, n_pts=1000):
+        '''RRT main search function
+        arguments:
+            n_pts - number of points try to sample,
+                    not the number of final sampled points
+
+        In each step, extend a new node if possible, and check if reached the goal
+        '''
+        # Remove previous result
+        self.init_map()
+        # Start searching
+        for i in range(n_pts):
+            # Extend a new node until all the points are sampled
+            # or find the path
+            new_point = self.sample(0.05, 0)
+            new_node = self.extend(new_point, 10)
+            if self.found:
+                break
+
+        # Output
+        if self.found:
+            steps = len(self.vertices) - 2
+            length = self.path_cost(self.start, self.goal)
+            print("It took %d nodes to find the current paths" %steps)
+            print("The path length is %.2f" %length)
+        if not self.found:
+            print("No path found")
+
+        # Draw result
+        self.draw_map()
+
+    #==========================================================================
+    def RRT_star(self, n_pts=1000, neighbor_size=20):
+        '''RRT* search function
+        arguments:
+            n_pts - number of points try to sample,
+                    not the number of final sampled points
+            neighbor_size - the neighbor distance
+
+        In each step, extend a new node if possible, and rewire the node and its neighbors
+        '''
+        # Remove previous result
+        self.init_map()
+        # Start searching
+        for i in range(n_pts):
+            # Extend a new node
+            new_point = self.sample(0.05, 0)
+            new_node = self.extend(new_point, 10)
+            # Rewire
+            if new_node is not None:
+                neighbors = self.get_neighbors(new_node, neighbor_size)
+                self.rewire(new_node, neighbors)
+
+        # Output
+        if self.found:
+            steps = len(self.vertices) - 2
+            length = self.path_cost(self.start, self.goal)
+            print("It took %d nodes to find the current path" %steps)
+            print("The path length is %.2f" %length)
+        else:
+            print("No path found")
+
+        # Draw result
+        self.draw_map()
+
+    #==========================================================================
+    def informed_RRT_star(self, n_pts=1000, neighbor_size=20):
+        '''Informed RRT* search function
+        arguments:
+            n_pts - number of points try to sample,
+                    not the number of final sampled points
+            neighbor_size - the neighbor distance
+
+        In each step, extend a new node if possible, and rewire the node and its neighbors
+        Once a path is found, an ellipsoid will be defined to constrained the sampling area
+        '''
+        # Remove previous result
+        self.init_map()
+        # Start searching
+        for i in range(n_pts):
+
+            #### TODO ####
+            c_best = 0
+            # Once a path is found, update the best length of path - c_best
+            # using the function self.path_cost(self.start, self.goal)
+
+            #### TODO END ####
+
+            # Extend a new node
+            new_point = self.sample(0.05, c_best)
+            new_node = self.extend(new_point, 10)
+            # Rewire
+            if new_node is not None:
+                neighbors = self.get_neighbors(new_node, neighbor_size)
+                self.rewire(new_node, neighbors)
+
+        # Output
+        if self.found:
+            steps = len(self.vertices) - 2
+            length = self.path_cost(self.start, self.goal)
+            print("It took %d nodes to find the current path" %steps)
+            print("The path length is %.2f" %length)
+        else:
+            print("No path found")
+
+        # Draw result
+        self.draw_map()
+
+    #==========================================================================
     def init_map(self):
         '''Intialize the map before each search
         '''
@@ -39,37 +148,32 @@ class RRT:
         self.vertices.append(self.start)
 
     #==========================================================================
-    def dis(self, node1, node2):
-        '''Calculate the euclidean distance between two nodes
+    def sample(self, goal_bias=0.05, c_best=0):
+        '''Sample a random point in the area
         arguments:
-            node1 - node 1
-            node2 - node 2
+            goal_bias - the possibility of choosing the goal instead of a random point
+            c_best - the length of the current best path (For informed RRT)
 
         return:
-            euclidean distance between two nodes
-        '''
-        return np.sqrt((node1.row-node2.row)**2 + (node1.col-node2.col)**2)
+            a new node if this node is valid and added, None if not.
 
-    #==========================================================================
-    def check_collision(self, node1, node2):
-        '''Check if the path between two nodes collide with obstacles
-        arguments:
-            node1 - node 1
-            node2 - node 2
-
-        return:
-            True if there are obstacles
-            False if the new node is valid to be connected
+        Generate a new point
         '''
-        # Check obstacle between nodes
-        # get all the points in between
-        points_between = zip(np.linspace(node1.row, node2.row, dtype=int),
-                             np.linspace(node1.col, node2.col, dtype=int))
-        # check if any of these are obstacles
-        for point in points_between:
-            if self.map_array[point[0]][point[1]] == 0:
-                return True
-        return False
+        # Generate a new point
+
+        #### TODO ####
+
+        new_point = self.get_new_point(goal_bias) #del this
+
+        # Regular sampling if c_best <= 0
+        # using self.get_new_point
+
+        # Sampling in an ellipsoid if c_best is a positive value
+        # using self.get_new_point_in_ellipsoid
+
+        #### TODO END ####
+
+        return new_point
 
     #==========================================================================
     def get_new_point(self, goal_bias):
@@ -124,49 +228,6 @@ class RRT:
         return point
 
     #==========================================================================
-    def get_nearest_node(self, point):
-        '''Find the nearest node from the new point in self.vertices
-        arguments:
-            point - the new point
-
-        return:
-            the nearest node
-        '''
-        # Use kdtree to find the neighbors within neighbor size
-        samples = [[v.row, v.col] for v in self.vertices]
-        kdtree = spatial.cKDTree(samples)
-        coord, ind = kdtree.query(point)
-        return self.vertices[ind]
-
-    #==========================================================================
-    def sample(self, goal_bias=0.05, c_best=0):
-        '''Sample a random point in the area
-        arguments:
-            goal_bias - the possibility of choosing the goal instead of a random point
-            c_best - the length of the current best path (For informed RRT)
-
-        return:
-            a new node if this node is valid and added, None if not.
-
-        Generate a new point
-        '''
-        # Generate a new point
-
-        #### TODO ####
-
-        new_point = self.get_new_point(goal_bias) #del this
-
-        # Regular sampling if c_best <= 0
-        # using self.get_new_point
-
-        # Sampling in an ellipsoid if c_best is a positive value
-        # using self.get_new_point_in_ellipsoid
-
-        #### TODO END ####
-
-        return new_point
-
-    #==========================================================================
     def extend(self, new_point, extend_dis=10):
         '''Extend a new node to the current tree structure
         arguments:
@@ -208,6 +269,54 @@ class RRT:
             return new_node
         else:
             return None
+
+    #==========================================================================
+    def get_nearest_node(self, point):
+        '''Find the nearest node from the new point in self.vertices
+        arguments:
+            point - the new point
+
+        return:
+            the nearest node
+        '''
+        # Use kdtree to find the neighbors within neighbor size
+        samples = [[v.row, v.col] for v in self.vertices]
+        kdtree = spatial.cKDTree(samples)
+        coord, ind = kdtree.query(point)
+        return self.vertices[ind]
+
+    #==========================================================================
+    def check_collision(self, node1, node2):
+        '''Check if the path between two nodes collide with obstacles
+        arguments:
+            node1 - node 1
+            node2 - node 2
+
+        return:
+            True if there are obstacles
+            False if the new node is valid to be connected
+        '''
+        # Check obstacle between nodes
+        # get all the points in between
+        points_between = zip(np.linspace(node1.row, node2.row, dtype=int),
+                             np.linspace(node1.col, node2.col, dtype=int))
+        # check if any of these are obstacles
+        for point in points_between:
+            if self.map_array[point[0]][point[1]] == 0:
+                return True
+        return False
+
+    #==========================================================================
+    def dis(self, node1, node2):
+        '''Calculate the euclidean distance between two nodes
+        arguments:
+            node1 - node 1
+            node2 - node 2
+
+        return:
+            euclidean distance between two nodes
+        '''
+        return np.sqrt((node1.row-node2.row)**2 + (node1.col-node2.col)**2)
 
     #==========================================================================
     def get_neighbors(self, new_node, neighbor_size):
@@ -319,112 +428,3 @@ class RRT:
 
         # show image
         plt.show()
-
-    #==========================================================================
-    def RRT(self, n_pts=1000):
-        '''RRT main search function
-        arguments:
-            n_pts - number of points try to sample,
-                    not the number of final sampled points
-
-        In each step, extend a new node if possible, and check if reached the goal
-        '''
-        # Remove previous result
-        self.init_map()
-        # Start searching
-        for i in range(n_pts):
-            # Extend a new node until all the points are sampled
-            # or find the path
-            new_point = self.sample(0.05, 0)
-            new_node = self.extend(new_point, 10)
-            if self.found:
-                break
-
-        # Output
-        if self.found:
-            steps = len(self.vertices) - 2
-            length = self.path_cost(self.start, self.goal)
-            print("It took %d nodes to find the current paths" %steps)
-            print("The path length is %.2f" %length)
-        if not self.found:
-            print("No path found")
-
-        # Draw result
-        self.draw_map()
-
-    #==========================================================================
-    def RRT_star(self, n_pts=1000, neighbor_size=20):
-        '''RRT* search function
-        arguments:
-            n_pts - number of points try to sample,
-                    not the number of final sampled points
-            neighbor_size - the neighbor distance
-
-        In each step, extend a new node if possible, and rewire the node and its neighbors
-        '''
-        # Remove previous result
-        self.init_map()
-        # Start searching
-        for i in range(n_pts):
-            # Extend a new node
-            new_point = self.sample(0.05, 0)
-            new_node = self.extend(new_point, 10)
-            # Rewire
-            if new_node is not None:
-                neighbors = self.get_neighbors(new_node, neighbor_size)
-                self.rewire(new_node, neighbors)
-
-        # Output
-        if self.found:
-            steps = len(self.vertices) - 2
-            length = self.path_cost(self.start, self.goal)
-            print("It took %d nodes to find the current path" %steps)
-            print("The path length is %.2f" %length)
-        else:
-            print("No path found")
-
-        # Draw result
-        self.draw_map()
-
-    #==========================================================================
-    def informed_RRT_star(self, n_pts=1000, neighbor_size=20):
-        '''Informed RRT* search function
-        arguments:
-            n_pts - number of points try to sample,
-                    not the number of final sampled points
-            neighbor_size - the neighbor distance
-
-        In each step, extend a new node if possible, and rewire the node and its neighbors
-        Once a path is found, an ellipsoid will be defined to constrained the sampling area
-        '''
-        # Remove previous result
-        self.init_map()
-        # Start searching
-        for i in range(n_pts):
-
-            #### TODO ####
-            c_best = 0
-            # Once a path is found, update the best length of path - c_best
-            # using the function self.path_cost(self.start, self.goal)
-
-            #### TODO END ####
-
-            # Extend a new node
-            new_point = self.sample(0.05, c_best)
-            new_node = self.extend(new_point, 10)
-            # Rewire
-            if new_node is not None:
-                neighbors = self.get_neighbors(new_node, neighbor_size)
-                self.rewire(new_node, neighbors)
-
-        # Output
-        if self.found:
-            steps = len(self.vertices) - 2
-            length = self.path_cost(self.start, self.goal)
-            print("It took %d nodes to find the current path" %steps)
-            print("The path length is %.2f" %length)
-        else:
-            print("No path found")
-
-        # Draw result
-        self.draw_map()
