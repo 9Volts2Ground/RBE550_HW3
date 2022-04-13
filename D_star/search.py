@@ -46,14 +46,16 @@ class DStar:
     def instantiate_node(self, point):
         ''' Instatiate a node given point (x, y) '''
         row, col = point
-        node = Node(row, col, not self.grid[row][col],
-                              not self.dynamic_grid[row][col])
+        node = Node(row,
+                    col,
+                    not self.grid[row][col], # is_obs
+                    not self.dynamic_grid[row][col]) # is_dy_obs
         return node
 
     #==========================================================================
     def run(self):
         ''' Run D* algorithm
-            Perform the first search from goal to start given the pre-known grid
+            Perform the first search from goal to start given the pre-known grid.
             Check from start to goal to see if any change happens in the grid,
             modify the cost and replan in the new map
         '''
@@ -130,17 +132,17 @@ class DStar:
         col = node.col
         neighbors = []
         # All the 8 neighbors
-        for i in range(-1, 2):
-            for j in range(-1, 2):
+        for r in range(-1, 2):
+            for c in range(-1, 2):
                 # Check range
-                if row + i < 0 or row + i >= len(self.grid) or \
-                   col + j < 0 or col + j >= len(self.grid[0]):
+                if row + r < 0 or row + r >= len(self.grid) or \
+                   col + c < 0 or col + c >= len(self.grid[0]):
                     continue
                 # Do not append the same node
-                if i == 0 and j == 0:
+                if r == 0 and c == 0:
                     continue
 
-                neighbors.append(self.grid_node[row + i][col + j])
+                neighbors.append(self.grid_node[row + r][col + c])
 
         return neighbors
 
