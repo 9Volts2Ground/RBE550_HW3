@@ -51,16 +51,7 @@ class RRT:
                 break
 
         # Output
-        if self.found:
-            steps = len(self.vertices) - 2
-            length = self.path_cost(self.start, self.goal)
-            print("It took %d nodes to find the current paths" %steps)
-            print("The path length is %.2f" %length)
-        if not self.found:
-            print("No path found")
-
-        # Draw result
-        self.draw_map()
+        self.show_results()
 
     #==========================================================================
     def RRT_star(self, n_pts=1000, neighbor_size=20):
@@ -85,16 +76,7 @@ class RRT:
                 self.rewire(new_node, neighbors)
 
         # Output
-        if self.found:
-            steps = len(self.vertices) - 2
-            length = self.path_cost(self.start, self.goal)
-            print("It took %d nodes to find the current path" %steps)
-            print("The path length is %.2f" %length)
-        else:
-            print("No path found")
-
-        # Draw result
-        self.draw_map()
+        self.show_results()
 
     #==========================================================================
     def informed_RRT_star(self, n_pts=1000, neighbor_size=20):
@@ -109,15 +91,18 @@ class RRT:
         '''
         # Remove previous result
         self.init_map()
+        c_best = 0
         # Start searching
         for i in range(n_pts):
 
-            #### TODO ####
-            c_best = 0
-            # Once a path is found, update the best length of path - c_best
-            # using the function self.path_cost(self.start, self.goal)
-
-            #### TODO END ####
+            if self.found:
+                # Once a path is found, update the best length of path - c_best
+                # using the function self.path_cost(self.start, self.goal)
+                if c_best == 0:
+                    # Initialize c_best the first time we find the goal
+                    c_best = self.path_cost(self.start, self.goal)
+                else:
+                    c_best = min( c_best, self.path_cost(self.start, self.goal) )
 
             # Extend a new node
             new_point = self.sample(0.05, c_best)
@@ -128,16 +113,7 @@ class RRT:
                 self.rewire(new_node, neighbors)
 
         # Output
-        if self.found:
-            steps = len(self.vertices) - 2
-            length = self.path_cost(self.start, self.goal)
-            print("It took %d nodes to find the current path" %steps)
-            print("The path length is %.2f" %length)
-        else:
-            print("No path found")
-
-        # Draw result
-        self.draw_map()
+        self.show_results()
 
     #==========================================================================
     def init_map(self):
@@ -145,7 +121,7 @@ class RRT:
         '''
         self.found = False
         self.vertices = []
-        self.vertices.append(self.start)
+        self.vertices.append(self.start) # Initialize the starting vertex
 
     #==========================================================================
     def sample(self, goal_bias=0.05, c_best=0):
@@ -159,19 +135,12 @@ class RRT:
 
         Generate a new point
         '''
-        # Generate a new point
-
-        #### TODO ####
-
-        new_point = self.get_new_point(goal_bias) #del this
-
-        # Regular sampling if c_best <= 0
-        # using self.get_new_point
-
-        # Sampling in an ellipsoid if c_best is a positive value
-        # using self.get_new_point_in_ellipsoid
-
-        #### TODO END ####
+        # Regular sampling
+        if c_best <= 0:
+            new_point = self.get_new_point( goal_bias )
+        else:
+            # Sampling in an ellipsoid if c_best is a positive value
+            new_point = self.get_new_point_in_ellipsoid( goal_bias, c_best )
 
         return new_point
 
@@ -207,23 +176,36 @@ class RRT:
         if np.random.random() < goal_bias:
             point = [self.goal.row, self.goal.col]
 
-        #### TODO ####
         # Generate a random point in an ellipsoid
         else:
-            pass
             # Compute the distance between start and goal - c_min
+            c_min = np.linalg.norm( [self.goal.row - self.start.row,
+                                     self.goal.col - self.start.col] )
 
             # Calculate center of the ellipsoid - x_center
+            x_center = [ np.mean([self.goal.row, self.start.row]),
+                         np.mean([self.goal.col, self.start.col]),
+                         1 ]
 
             # Compute rotation matrix from elipse to world frame - C
+            theta = np.arctan2( self.goal.row-self.start.row, self.goal.col-self.start.col )
+            T_world2elipse = self.rotrz( theta )
 
             # Compute diagonal matrix - L
+            L = np.diag( [c_best/2, np.sqrt( c_best**2 - c_min**2 )/2, np.sqrt( c_best**2 - c_min**2 )/2] )
 
             # Cast a sample from a unit ball - x_ball
+            unit_circle_angle = np.pi*(2*np.random.random()-1)
+            circle_radius = np.random.random()
+            x_ball = np.array( [circle_radius*np.cos(unit_circle_angle),
+                                circle_radius*np.sin(unit_circle_angle),
+                                1])
 
             # Map ball sample to the ellipsoid - x_rand
+            x_rand = T_world2elipse @ L @ x_ball.T + x_center
+            point = x_rand[0:2]
 
-        #### TODO END ####
+            # print(f'c_best, x_ball, point = {c_best}, {x_ball}, {point}')
 
         return point
 
@@ -380,7 +362,7 @@ class RRT:
 
         # Rewire the new node
         # compute the least potential cost
-        costs = [d + self.path_cost(self.start, neighbors[i]) for i, d in enumerate(distances)]
+        costs = [dist + self.path_cost(self.start, neighbors[i]) for i, dist in enumerate(distances)]
         indices = np.argsort(np.array(costs))
         # check collision and connect the best node to the new node
         for i in indices:
@@ -399,6 +381,37 @@ class RRT:
                not self.check_collision(node, new_node):
                 node.parent = new_node
                 node.cost = distances[i]
+
+    #==============================================================================
+    def rotrz( self, theta ):
+        """ Calculates 3x3 rotation matrix around Z axis
+        Args:
+            theta (float): Angle of rotation in radians
+        Returns:
+            R (3x3 numpy array): Rotation matrix
+        """
+        cost = np.cos(theta)
+        sint = np.sin(theta)
+        R = np.array( [ [cost, -sint, 0.0],
+                        [sint,  cost, 0.0],
+                        [0.0, 0.0, 1.0] ] )
+        return R
+
+    #==========================================================================
+    def show_results( self ):
+        '''Prints results to the terminal, generates plot of the map
+        '''
+        # Output
+        if self.found:
+            steps = len(self.vertices) - 2 # -2 for start and end vertex
+            length = self.path_cost(self.start, self.goal)
+            print("It took %d nodes to find the current path" %steps)
+            print("The path length is %.2f" %length)
+        else:
+            print("No path found")
+
+        # Draw result
+        self.draw_map()
 
     #==========================================================================
     def draw_map(self):

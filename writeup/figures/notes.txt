@@ -1,0 +1,7 @@
+Informed RRT*:
+    First image:
+        1126 nodes
+        251.93 path length
+    Second image:
+        1110 nodes
+        249.37
