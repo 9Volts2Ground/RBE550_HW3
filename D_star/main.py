@@ -1,9 +1,10 @@
 import csv
 from search import DStar
 
-
-# Load map, start and goal point.
+#==========================================================
 def load_map(file_path):
+    '''Load map, start and goal point.
+    '''
     grid = []
     start = [0, 0]
     goal = [0, 0]
@@ -24,7 +25,7 @@ def load_map(file_path):
                 grid.append(int_row)
     return grid, start, goal
 
-
+#==========================================================
 if __name__ == "__main__":
     # Load the map
     grid, start, goal = load_map('map1.csv')
