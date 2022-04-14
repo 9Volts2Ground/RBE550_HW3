@@ -1,6 +1,8 @@
+from telnetlib import theNULL
 import matplotlib.pyplot as plt
 from matplotlib.patches import Rectangle
 import math
+import numpy as np
 
 #==============================================================================
 class Node:
@@ -15,7 +17,7 @@ class Node:
         self.tag = "NEW"           # tag ("NEW", "OPEN", "CLOSED")
         self.h = math.inf          # cost to goal (NOT heuristic)
         self.k = math.inf          # best h
-        self.parent = None         # parent node
+        self.parent = None         # parent node, b(x)
 
 #==============================================================================
 class DStar:
@@ -61,9 +63,10 @@ class DStar:
         '''
         #### TODO ####
         # Search from goal to start with the pre-known map
-
+        while len( self.open ) > 0:
             # Process until open set is empty or start is reached
             # using self.process_state()
+            cost_k = self.process_state()
 
 
         # Visualize the first path if found
@@ -110,17 +113,50 @@ class DStar:
                 Or update this neighbor's cost if it already is
         '''
         #### TODO ####
-        # Pop node from open list
+        # Pop node from open list with lowest k
+        X = self.min_node() # X = current_node, to match paper notation
+        if not X:
+            return -1
+
+        k_old = self.get_k_min()
+        self.delete( X ) # Remove it from the list
 
         # Get neighbors of the node
-        # using self.get_neighbors
+        neighbors = self.get_neighbors( X )
 
         # If node k is smaller than h (RAISE)
+        if k_old < X.h:
+            for Y in neighbors: # Y = current neighbor, to match paper notatino
+                if Y.h <= k_old and X.h > (Y.h + self.cost(X,Y)):
+                    X.parent = Y
+                    X.h = Y.h + self.cost(X,Y)
 
         # If node k is the same as h (LOWER)
+        if k_old == X.h:
+            for Y in neighbors:
+                if Y.tag.upper() in "NEW" or \
+                    (Y.parent == X and Y.h is not X.h + self.cost(X,Y)) or \
+                    (Y.parent is not X and Y.h > X.h + self.cost(X,Y)):
 
-        # Else node k is smaller than h (RASIE)
+                    Y.parent = X
+                    self.insert( Y, X.h + self.cost(X,Y) )
 
+        # Else node k is smaller than h (RAISE)
+        else:
+            for Y in neighbors:
+                if Y.tag.upper() in "NEW" or \
+                    (Y.parent == X and Y.h is not X.h + self.cost(X,Y)):
+
+                    Y.parent = X
+                    self.insert( Y, X.h + self.cost(X,Y))
+                else:
+                    if Y.parent is not X and Y.h > X.h + self.cost(X,Y):
+                        self.insert( X, X.h )
+                    else:
+                        if Y.parent is not X and X.h > Y.h + self.cost(X,Y) and \
+                            Y.tag.upper() in "CLOSED" and Y.h > k_old:
+
+                            self.insert( Y, Y.h )
         #### TODO END ####
 
         return self.get_k_min()
@@ -214,13 +250,15 @@ class DStar:
         #### TODO END ####
 
     #==========================================================================
-    def modify_cost(self, obsatcle_node, neighbor):
+    def modify_cost(self, obstacle_node, neighbor):
         ''' Modify the cost from the affected node to the obstacle node and
             put it back to the open list
         '''
         #### TODO ####
         # Change the cost from the dynamic obsatcle node to the affected node
         # by setting the obstacle_node.is_obs to True (see self.cost())
+        obstacle_node.is_obs = True
+        cost = self.cost( obstacle_node, neighbor )
 
         # Put the obsatcle node and the neighbor node back to Open list
 
@@ -261,7 +299,7 @@ class DStar:
         # Euclidean distance
         a = node1.row - node2.row
         b = node1.col - node2.col
-        return (a**2 + b**2) ** (1/2)
+        return np.linalg.norm( [ a, b ] )
 
     #==========================================================================
     def insert(self, node, new_h):
