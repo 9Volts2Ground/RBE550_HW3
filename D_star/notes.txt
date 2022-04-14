@@ -1,0 +1,18 @@
+G = goal state
+X = Current state
+Y = new state
+b(x) = backpointer (parent)
+c(x,y) = arc cost function 
+t(x) = tag type := NEW, OPEN, CLOSED
+h(G,x) = path cost
+k(G,x) = key function, min of h
+k_min = min( k(x) ) for all t(x) = open
+k_old = k_min prior to removing x from open()
+
+# Functions to update:
+run()
+# process_state()
+# prepare_repair
+modify_cost
+# repair_replan
+
