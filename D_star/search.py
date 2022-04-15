@@ -107,6 +107,7 @@ class DStar:
             if self.path == []:
                 print("No path is found")
                 return
+            plt.close()
 
             # Get the next node to continue
             node = node.parent
@@ -207,10 +208,6 @@ class DStar:
                 elif r == 0 and c == 0:
                     continue
 
-                # # SAS Update:
-                # neighbor = self.grid_node[row + r][col + c]
-                # if not neighbor.is_obs:
-
                 neighbors.append(self.grid_node[row + r][col + c])
 
         return neighbors
@@ -308,11 +305,9 @@ class DStar:
 
         # Put the neighbor node back to Open list
         if neighbor.tag.upper() in "CLOSED":
-            self.insert( neighbor, math.inf ) # Clear the neighbors cost so it can be recalculated
+            self.insert( neighbor, neighbor.h ) # math.inf ) Clear the neighbors cost so it can be recalculated
 
         #### TODO END ####
-
-        return self.get_k_min()
 
     #==========================================================================
     def repair_replan(self, node):
