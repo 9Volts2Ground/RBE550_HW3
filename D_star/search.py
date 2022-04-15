@@ -70,8 +70,10 @@ class DStar:
             # Process until open set is empty or start is reached
             cost_k = self.process_state()
 
-        # Visualize the first path if found
+        # Backtrace the path we just found
         self.get_backpointer_list(self.start)
+
+        # Visualize the first path if found
         self.draw_path(self.grid, "Path in static map")
         if self.path == []:
             print("No path is found")
@@ -80,6 +82,8 @@ class DStar:
         # Start from start to goal
         node = self.start
         while node is not self.goal:
+
+            print(f"node, parent = [{node.row}, {node.col}] [{node.parent.row}, {node.parent.col}]")
 
             # Update the path if there is any change in the map
             if node.is_dy_obs:
@@ -93,17 +97,19 @@ class DStar:
                 # Get the new path from the current node
                 self.get_backpointer_list( node )
 
-                # Uncomment this part when you have finished the previous part
-                # for visualizing each move and replanning
-                # Visualize the path in progress
-                self.draw_path(self.dynamic_grid, "Path in progress")
-                if self.path == []:
-                    print("No path is found")
-                    return
-                # Get the next node to continue
-                node = node.parent
+            # Uncomment this part when you have finished the previous part
+            # for visualizing each move and replanning
+            # Visualize the path in progress
+            self.draw_path(self.dynamic_grid, "Path in progress")
+            if self.path == []:
+                print("No path is found")
+                return
+
+            # Get the next node to continue
+            node = node.parent
 
         #### TODO END ####
+        print("Finishing path")
 
     #==========================================================================
     def process_state(self):
@@ -130,39 +136,55 @@ class DStar:
 
         # If node k is smaller than h (RAISE)
         if k_old < X.h:
-            for Y in neighbors: # Y = current neighbor, to match paper notatino
-                if Y.h <= k_old and X.h > (Y.h + self.cost(Y,X)):
+            for Y in neighbors: # Y = current neighbor, to match paper notation
+                new_h = Y.h + self.cost(Y,X)
+                if Y.h <= k_old and X.h > new_h:
                     X.parent = Y
-                    X.h = Y.h + self.cost(Y,X)
+                    X.h = new_h
 
         # If node k is the same as h (LOWER)
         if k_old == X.h:
             for Y in neighbors:
+
+                new_h = X.h + self.cost(X,Y)
                 if Y.tag.upper() in "NEW" or \
-                    (Y.parent == X and Y.h is not (X.h + self.cost(X,Y) ) ) or \
-                    (Y.parent is not X and Y.h > (X.h + self.cost(X,Y) ) ):
+                    (self.equiv_nodes(Y.parent, X) and Y.h is not new_h ) or \
+                    (not self.equiv_nodes(Y.parent, X) and Y.h > new_h ):
 
                     Y.parent = X
-                    self.insert( Y, X.h + self.cost(X,Y) )
+                    self.insert( Y, new_h )
 
         # Else node k is smaller than h (RAISE)
         else:
             for Y in neighbors:
+                new_h = X.h + self.cost(X,Y)
+
                 if Y.tag.upper() in "NEW" or \
-                    (Y.parent == X and Y.h is not (X.h + self.cost(X,Y) ) ):
+                    (self.equiv_nodes(Y.parent, X) and Y.h is not new_h ):
 
                     Y.parent = X
-                    self.insert( Y, X.h + self.cost(X,Y))
+                    self.insert( Y, new_h)
                 else:
-                    if Y.parent is not X and Y.h > X.h + self.cost(X,Y):
+                    if not self.equiv_nodes(Y.parent, X) and Y.h > new_h:
                         self.insert( X, X.h )
                     else:
-                        if Y.parent is not X and X.h > (Y.h + self.cost(Y,X)) and \
+                        if not self.equiv_nodes( Y.parent, X) and X.h > (Y.h + self.cost(Y,X)) and \
                             Y.tag.upper() in "CLOSED" and Y.h > k_old:
 
                             self.insert( Y, Y.h )
         #### TODO END ####
         return self.get_k_min()
+
+    #==========================================================================
+    def equiv_nodes( self, X, Y ):
+        '''Compares two nodes positions to see if they are the same node
+        '''
+        if not X or not Y:
+            return False
+        elif X.row == Y.row and X.col == Y.col:
+            return True
+        else:
+            return False
 
     #==========================================================================
     def get_neighbors(self, node):
@@ -178,8 +200,12 @@ class DStar:
                    col + c < 0 or col + c >= len(self.grid[0]):
                     continue
                 # Do not append the same node
-                if r == 0 and c == 0:
+                elif r == 0 and c == 0:
                     continue
+
+                # # SAS Update:
+                # neighbor = self.grid_node[row + r][col + c]
+                # if not neighbor.is_obs:
 
                 neighbors.append(self.grid_node[row + r][col + c])
 
@@ -269,10 +295,11 @@ class DStar:
         # Change the cost from the dynamic obsatcle node to the affected node
         # by setting the obstacle_node.is_obs to True (see self.cost())
         obstacle_node.is_obs = True
+        obstacle_node.h = self.cost( obstacle_node, neighbor )
 
-        # Put the obsatcle node and the neighbor node back to Open list
-        self.insert( obstacle_node, obstacle_node.h )
-        self.insert( neighbor, neighbor.h )
+        # Put the neighbor node back to Open list
+        if neighbor.tag.upper() in "CLOSED":
+            self.insert( neighbor, neighbor.h )
 
         #### TODO END ####
 
@@ -326,19 +353,19 @@ class DStar:
         Update the k value of the node based on its tag
         Append the node t othe open_list
         '''
-        # Update k
-        if node.tag == "NEW":
-            node.k = new_h
-        elif node.tag == "OPEN":
-            node.k = min(node.k, new_h)
-        elif node.tag == "CLOSED":
-            node.k = min(node.h, new_h)
-        # Update h
-        node.h = new_h
-        # Update tag and put the node in the open set
-        node.tag = "OPEN"
-
         if not node.is_obs: # SAS: update
+            # Update k
+            if node.tag == "NEW":
+                node.k = new_h
+            elif node.tag == "OPEN":
+                node.k = min(node.k, new_h)
+            elif node.tag == "CLOSED":
+                node.k = min(node.h, new_h)
+            # Update h
+            node.h = new_h
+            # Update tag and put the node in the open set
+            node.tag = "OPEN"
+
             self.open.add(node)
 
     #==========================================================================
