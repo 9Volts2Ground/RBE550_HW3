@@ -86,16 +86,14 @@ class DStar:
             print(f"node, parent = [{node.row}, {node.col}] [{node.parent.row}, {node.parent.col}]")
 
             # Update the path if there is any change in the map
-            if node.is_dy_obs:
+            # Check if any repair needs to be done
+            self.prepare_repair( node )
 
-                # Check if any repair needs to be done
-                self.prepare_repair( node )
+            # Replan a path from the current node
+            self.repair_replan( node )
 
-                # Replan a path from the current node
-                self.repair_replan( node )
-
-                # Get the new path from the current node
-                self.get_backpointer_list( node )
+            # Get the new path from the current node
+            self.get_backpointer_list( node )
 
             # Uncomment this part when you have finished the previous part
             # for visualizing each move and replanning
@@ -279,6 +277,8 @@ class DStar:
             # the neighbor is a new dynamic obstacle
             if neighbor.is_dy_obs and not neighbor.is_obs:
 
+                print(f"Uh oh, a wild Snorlax appeared! [{neighbor.row}, {neighbor.col}]")
+
                 # Modify the cost from this neighbor node to all this neighbor's neighbors
                 sub_neighbors = self.get_neighbors( neighbor )
                 for sub_neigh in sub_neighbors:
@@ -296,6 +296,7 @@ class DStar:
         # by setting the obstacle_node.is_obs to True (see self.cost())
         obstacle_node.is_obs = True
         obstacle_node.h = self.cost( obstacle_node, neighbor )
+        obstacle_node.k = self.cost( obstacle_node, neighbor )
 
         # Put the neighbor node back to Open list
         if neighbor.tag.upper() in "CLOSED":
@@ -313,8 +314,9 @@ class DStar:
         #### TODO ####
         # Call self.process_state() until it returns k_min >= h(Y) or open list is empty
         # The cost change will be propagated
-        while len( self.open ) > 0 and self.get_k_min() < node.h:
-            self.process_state()
+        k_min = self.get_k_min()
+        while len( self.open ) > 0 and k_min < node.h:
+            k_min = self.process_state()
 
         #### TODO END ####
 
