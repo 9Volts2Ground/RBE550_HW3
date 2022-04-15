@@ -83,9 +83,10 @@ class DStar:
             print("No path is found")
             return
 
+        print("Running the path, looking for obstacles...")
         # Start from start to goal
         node = self.start
-        while node is not self.goal:
+        while not self.equiv_nodes( node, self.goal ):
 
             print(f"node, parent = [{node.row}, {node.col}] [{node.parent.row}, {node.parent.col}]")
 
@@ -252,16 +253,20 @@ class DStar:
         # Assume there is a path from start to goal
         cur_node = node
         self.path = [cur_node]
-        while cur_node != self.goal and \
-              cur_node != None and \
-              not cur_node.is_obs:
 
-            print(f"current node = [{cur_node.row}, {cur_node.col}]")
+        backpointer_list = []
+
+        while not self.equiv_nodes( cur_node, self.goal ) and \
+              cur_node != None and not cur_node.is_obs:
+
+            backpointer_list.append( [cur_node.row, cur_node.col] )
 
             # trace back
             cur_node = cur_node.parent
             # add to path
             self.path.append(cur_node)
+
+        print(f"backpointer_list (excludes goal) = {backpointer_list}")
 
         # If there is not such a path
         if cur_node != self.goal:
@@ -303,7 +308,7 @@ class DStar:
 
         # Put the neighbor node back to Open list
         if neighbor.tag.upper() in "CLOSED":
-            self.insert( neighbor, neighbor.h )
+            self.insert( neighbor, math.inf ) # Clear the neighbors cost so it can be recalculated
 
         #### TODO END ####
 
@@ -358,20 +363,20 @@ class DStar:
         Update the k value of the node based on its tag
         Append the node t othe open_list
         '''
-        if not node.is_obs: # SAS: update
-            # Update k
-            if node.tag == "NEW":
-                node.k = new_h
-            elif node.tag == "OPEN":
-                node.k = min(node.k, new_h)
-            elif node.tag == "CLOSED":
-                node.k = min(node.h, new_h)
-            # Update h
-            node.h = new_h
-            # Update tag and put the node in the open set
-            node.tag = "OPEN"
+        # Update k
+        if node.tag == "NEW":
+            node.k = new_h
+        elif node.tag == "OPEN":
+            node.k = min(node.k, new_h)
+        elif node.tag == "CLOSED":
+            node.k = min(node.h, new_h)
 
-            self.open.add(node)
+        # Update h
+        node.h = new_h
+
+        # Update tag and put the node in the open set
+        node.tag = "OPEN"
+        self.open.add(node)
 
     #==========================================================================
     def draw_path(self, grid, title="Path"):
