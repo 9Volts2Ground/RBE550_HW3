@@ -295,8 +295,6 @@ class DStar:
         # Change the cost from the dynamic obsatcle node to the affected node
         # by setting the obstacle_node.is_obs to True (see self.cost())
         obstacle_node.is_obs = True
-        obstacle_node.h = self.cost( obstacle_node, neighbor )
-        obstacle_node.k = self.cost( obstacle_node, neighbor )
 
         # Put the neighbor node back to Open list
         if neighbor.tag.upper() in "CLOSED":
