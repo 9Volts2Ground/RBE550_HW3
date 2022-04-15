@@ -62,6 +62,10 @@ class DStar:
             modify the cost and replan in the new map
         '''
         #### TODO ####
+
+        # Initialize the goal h
+        self.goal.h = 0
+
         # Search from goal to start with the pre-known map
         self.open.add( self.goal )
         cost_k = 0
@@ -157,19 +161,20 @@ class DStar:
             for Y in neighbors:
                 new_h = X.h + self.cost(X,Y)
 
+                # If we haven't processed this node yet, or its path cost is out-of-date
                 if Y.tag.upper() in "NEW" or \
                     (self.equiv_nodes(Y.parent, X) and Y.h is not new_h ):
 
+                    # Link these nodes, add it to the list, and update h
                     Y.parent = X
                     self.insert( Y, new_h)
                 else:
                     if not self.equiv_nodes(Y.parent, X) and Y.h > new_h:
                         self.insert( X, X.h )
-                    else:
-                        if not self.equiv_nodes( Y.parent, X) and X.h > (Y.h + self.cost(Y,X)) and \
-                            Y.tag.upper() in "CLOSED" and Y.h > k_old:
+                    elif not self.equiv_nodes( Y.parent, X) and X.h > (Y.h + self.cost(Y,X)) and \
+                        Y.tag.upper() in "CLOSED" and Y.h > k_old:
 
-                            self.insert( Y, Y.h )
+                        self.insert( Y, Y.h )
         #### TODO END ####
         return self.get_k_min()
 
